@@ -1,4 +1,4 @@
-package v1
+package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,18 +13,18 @@ const (
 	// This effectively doesn't change the cluster state.
 	EnforcementModePrivileged PSAEnforcementMode = "Privileged"
 
-	// EnforcementModeNoOpinion defers the enforcement decision to cluster logic.
+	// EnforcementModeConditional defers the enforcement decision to cluster logic.
 	// In practice:
 	//   - If any violating namespaces exist, the cluster remains at "Privileged".
 	//   - If no violating namespaces exist, the cluster enforces "Restricted".
 	// State changes:
 	//   - If the state changes from "any violation" to "no violations", the cluster
 	//     will start switching to enforcing "Restricted". For a controlled switch,
-	//     set EnforcementMode to "Privileged" and change to "NoOpinion" back once ready.
+	//     set EnforcementMode to "Privileged" and change to "Conditional" back once ready.
 	//   - If the state changes from "no violations" to "any violation", and the cluster
 	//     settled on enforcing "Restricted", the state won't change back, except the
 	//     EnforcementMode is set to "Privileged".
-	EnforcementModeNoOpinion PSAEnforcementMode = "NoOpinion"
+	EnforcementModeConditional PSAEnforcementMode = "Conditional"
 
 	// EnforcementModeRestricted indicates that the strictest Pod Security restrictions apply.
 	// This effectively moves the cluster into the "Restricted" state, despite violations.
@@ -51,12 +51,12 @@ type PSAEnforcementConfigSpec struct {
 	// mode is the user-selected Pod Security Admission enforcement level.
 	// Valid values are:
 	//   - "Privileged": ensures the cluster runs with no restrictions
-	//   - "NoOpinion": defers the decision to cluster-based evaluation
+	//   - "Conditional": defers the decision to cluster-based evaluation
 	//   - "Restricted": enforces strict Pod Security admission
 	//
-	// If this field is not set, it defaults to "NoOpinion".
+	// If this field is not set, it defaults to "Privileged".
 	//
-	// +kubebuilder:default=NoOpinion
+	// +kubebuilder:default=Privileged
 	Mode PSAEnforcementMode `json:"mode"`
 }
 
@@ -64,7 +64,7 @@ type PSAEnforcementConfigSpec struct {
 // Admission enforcement.
 type PSAEnforcementConfigStatus struct {
 	// effectiveMode is the actual Pod Security Admission mode being enforced by
-	// the cluster. This will differ from spec.mode if spec.mode is NoOpinion,
+	// the cluster. This will differ from spec.mode if spec.mode is Conditional,
 	// then the initial decision will be based on violating Namespaces.
 	EffectiveMode PSAEnforcementMode `json:"effectiveMode,omitempty"`
 
